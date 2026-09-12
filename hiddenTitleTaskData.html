@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>隱藏稱號清單(非活動)</title>
+    <style>
+        body {
+            font-family: "Microsoft JhengHei", Arial, sans-serif;
+            background-color: #1e1e1e;
+            color: #f0f0f0;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #ffffff;
+            margin-bottom: 30px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: #2d2d2d;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        th, td {
+            padding: 14px 16px;
+            text-align: left;
+            border-bottom: 1px solid #3d3d3d;
+        }
+        th {
+            background-color: #333333;
+            color: #ffcc00;
+            font-weight: bold;
+        }
+        tr:hover {
+            background-color: #383838;
+        }
+        tr:last-child td {
+            border-bottom: none;
+        }
+        .badge-general {
+            color: #ffffff;
+            background-color: #555555;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.85em;
+        }
+        .badge-rare {
+            color: #1e1e1e;
+            background-color: #ffcc00;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 0.85em;
+        }
+        .loading, .error {
+            text-align: center;
+            padding: 40px;
+            font-size: 1.2em;
+        }
+        .error {
+            color: #ff6b6b;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>隱藏稱號清單(非活動)</h1>
+    <table id="taskTable">
+        <thead>
+            <tr>
+                <th>任務 ID</th>
+                <th>任務名稱</th>
+                <th>獎勵物品 ID</th>
+                <th>物品名稱</th>
+                <th>物品說明</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td colspan="5" class="loading">正在載入任務資料...</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<script>
+    async function loadData() {
+        const tbody = document.querySelector("#taskTable tbody");
+        
+        try {
+            const response = await fetch('data/hiddenTitleTaskData.json');
+            
+            if (!response.ok) {
+                throw new Error(`無法載入檔案，HTTP 狀態碼: ${response.status}`);
+            }
+            
+            const taskData = await response.json();
+            
+            if (!Array.isArray(taskData)) {
+                throw new Error("JSON 格式錯誤：根節點必須是陣列格式");
+            }
+
+            renderTable(taskData);
+        } catch (error) {
+            console.error("載入失敗:", error);
+            tbody.innerHTML = `<tr><td colspan="5" class="error">載入 JSON 失敗：${error.message}</td></tr>`;
+        }
+    }
+
+    function renderTable(taskData) {
+        const tbody = document.querySelector("#taskTable tbody");
+        tbody.innerHTML = "";
+
+        taskData.forEach(item => {
+            const tr = document.createElement("tr");
+
+            // 處理物品說明的顏色標籤與換行
+            let formattedDesc = item.物品說明
+                .replace(/<color=ffffff>\[一般\]<\/color>/g, '<span class="badge-general">[一般]</span>')
+                .replace(/<color=ffcc00>\[稀有\]<\/color>/g, '<span class="badge-rare">[稀有]</span>')
+                .replace(/<br>/g, '<br>');
+
+            tr.innerHTML = `
+                <td>${item.任務ID}</td>
+                <td>${item.任務名稱}</td>
+                <td>${item.任務物品獎勵ID}</td>
+                <td><strong>${item.物品名稱}</strong></td>
+                <td>${formattedDesc}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    // 網頁載入後執行非同步讀取
+    window.addEventListener("DOMContentLoaded", loadData);
+</script>
+
+</body>
+</html>
